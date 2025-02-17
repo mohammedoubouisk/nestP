@@ -16,7 +16,10 @@ import { ArchiveEntit } from './archive/archive.entity';
 import { FluxSortantModule } from './flux/flux.module';
 import { FluxSortantEntity } from './flux/flux.entity';
 
-
+import { FluxEmpruntModule } from './flux_emprunt/flux_emprunt.module';
+import { FluxEmpruntEntity } from './flux_emprunt/flux_emprunt.entity';
+import { ReservationModule} from './reservation_service/reservation-service.module'
+import { ReservationEntity } from './reservation_service/reservation-service.entity';
    
 
 @Module({
@@ -26,6 +29,8 @@ import { FluxSortantEntity } from './flux/flux.entity';
   ReviewsModule,
   ArchiveModule,
   FluxSortantModule,
+  FluxEmpruntModule,
+  ReservationModule,
   TypeOrmModule.forRootAsync({
     inject: [ConfigService],
     useFactory: (config: ConfigService) => {
@@ -37,7 +42,7 @@ import { FluxSortantEntity } from './flux/flux.entity';
         port: config.get<number>('DB_PORT'),
         host: 'localhost',
         synchronize: process.env.NODE_ENV !== 'production',
-        entities: [ProductEntit, ReviewEntit, UserEntit, ArchiveEntit,FluxSortantEntity], 
+        entities: [ProductEntit, ReviewEntit, UserEntit, ArchiveEntit,FluxSortantEntity,FluxEmpruntEntity,ReservationEntity], 
       };
     },
   }),
@@ -46,6 +51,7 @@ import { FluxSortantEntity } from './flux/flux.entity';
     isGlobal:true,
     envFilePath:`.env.${process.env.NODE_ENV}`
  }),
+
  
 ],
   controllers: [ProductsController],

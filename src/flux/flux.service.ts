@@ -18,7 +18,7 @@ export class FluxSortantService {
     const archive = await this.archiveRepository.findOne({ where: { id: createFluxSortantDto.archive_id } });
     if (!archive) {
       throw new NotFoundException(`Archive with ID ${createFluxSortantDto.archive_id} not found`);
-    }
+    }                                   
     const fluxSortant = new FluxSortantEntity();
     fluxSortant.archive_id = createFluxSortantDto.archive_id;
     fluxSortant.date_sortie = new Date(createFluxSortantDto.date_sortie);
