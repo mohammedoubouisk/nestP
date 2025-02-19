@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ArchiveEntit } from './archive.entity'; // Ensure correct path
 import { CreateArchiveDto } from './dto/create_archive.dto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class ArchiveService {
@@ -41,13 +43,188 @@ export class ArchiveService {
         return { id, message: 'Archive mise à jour avec succès.' };
       }
     //end
-    async create(archiveData: Partial<ArchiveEntit>): Promise<{id:string, message:string}> {
-        const archive = this.archiveRepository.create(archiveData);
-        await this.archiveRepository.save(archive);
-        return {id:archive.id, message: "Archive créée avec succès."}
+
+    //code of create 
+    async create(archiveData: CreateArchiveDto): Promise<{ id: string; message: string }> {
+        try {
+
+          this.validateArchiveData(archiveData);
+
+          // Create archive entity
+          const archive = this.archiveRepository.create({
+            ...archiveData,
+            created_at: new Date(),
+            updated_at: new Date()
+          });
+
+    
+          // Save to database
+          const savedArchive = await this.archiveRepository.save(archive);
+    
+          return {
+            id: savedArchive.id,
+            message: "Archive créée avec succès."
+          };
+
+        } catch (error) {
+          // If save fails and we have a file, clean it up
+          // fs.unlinkSync( this remove file the specified path.
+          if (archiveData.file_url) {
+            try {
+              fs.unlinkSync(archiveData.file_url);
+            } catch (unlinkError) {
+              console.error('Error removing file:', unlinkError);
+            }
+          }
+    
+          throw new BadRequestException(
+            `Erreur lors de la création de l'archive: ${error.message}`
+          );
+        }
       }
+    
 
+    //import bulk
 
+    
+    async createBulk(archivesData: CreateArchiveDto[]): Promise<ArchiveEntit[]> {
+      // Create transaction for bulk operation
+      const queryRunner = this.archiveRepository.manager.connection.createQueryRunner();
+      await queryRunner.connect(); //connect to db
+      await queryRunner.startTransaction();//It allows you to execute multiple database operations within a single transaction, ensuring that they either all succeed or all fail together. and also if there is eror , undoing from any changes make during transactions
+
+      const createdArchives: ArchiveEntit[] = [];
+      const filesToDelete: string[] = []; //this one remove files in storage if operations failed 
+      
+      try {
+        for (const archiveData of archivesData) {
+          // Validate each archive data
+          this.validateArchiveData(archiveData);
+          
+          // Track file URL for cleanup in case of failure
+          if (archiveData.file_url) {
+            filesToDelete.push(archiveData.file_url);
+          }
+          
+          // Create archive entity
+          const archive = this.archiveRepository.create({
+            ...archiveData,
+            created_at: new Date(),
+            updated_at: new Date(),
+          });
+          //role of manager is By using queryRunner.manager, all save operations are grouped under the same transaction, allowing for proper rollback if needed.
+          const savedArchive = await queryRunner.manager.save(archive);
+          createdArchives.push(savedArchive);
+        }
+        
+        // Commit transaction if all archives were saved successfully
+        await queryRunner.commitTransaction();
+        return createdArchives;
+        
+      } catch (error) {
+        // Rollback transaction in case of error
+        await queryRunner.rollbackTransaction();
+        
+        // Clean up uploaded files if transaction failed
+        this.cleanupFiles(filesToDelete);
+        
+        throw new BadRequestException(
+          `Erreur lors de la création d'archives en masse: ${error.message}`
+        );
+      } finally {
+        // Release query runner
+        await queryRunner.release();
+      }
+    }
+    
+    private validateArchiveData(data: CreateArchiveDto): void {
+      // 1. Validate 'title'
+      if (!data.title || data.title.trim() === '') {
+        throw new BadRequestException('Le titre est obligatoire et ne peut pas être vide.');
+      }
+    
+      // 2. Validate 'description' (optional but should not be empty if provided)
+      if (data.description && data.description.trim() === '') {
+        throw new BadRequestException("La description ne peut pas être vide si elle est fournie.");
+      }
+    
+      // 3. Validate 'keywords' (must be an array of strings)
+      if (!Array.isArray(data.keywords) || data.keywords.some(keyword => typeof keyword !== 'string')) {
+        throw new BadRequestException("Les mots-clés doivent être un tableau de chaînes de caractères.");
+      }
+    
+      // 4. Validate 'date_created' (must be a valid Date object)
+      if (data.date_created && !(data.date_created instanceof Date)) {
+        throw new BadRequestException("La date de création doit être une instance de Date valide.");
+      }
+    
+      // 5. Validate 'location' (must have all required properties)
+      if (!data.location || 
+          !data.location.site || 
+          !data.location.locale || 
+          !data.location.armoires || 
+          !data.location.etageres) {
+        throw new BadRequestException("L'emplacement doit inclure les champs 'site', 'locale', 'armoires' et 'etageres'.");
+      }
+    
+      // 6. Validate 'file_url' (if provided, must be a string)
+      if (data.file_url && typeof data.file_url !== 'string') {
+        throw new BadRequestException("L'URL du fichier doit être une chaîne de caractères valide.");
+      }
+    
+      // 7. Validate 'code_barre' (must be unique and non-empty)
+      if (!data.code_barre || data.code_barre.trim() === '') {
+        throw new BadRequestException("Le code-barres est obligatoire et ne peut pas être vide.");
+      }
+    
+      // 8. Validate 'metadata' (must have 'auteur' and 'duree_conservation_ans')
+      if (!data.metadata || 
+          !data.metadata.auteur || 
+          typeof data.metadata.duree_conservation_ans !== 'number' || 
+          data.metadata.duree_conservation_ans <= 0) {
+        throw new BadRequestException("Les métadonnées doivent inclure 'auteur' (chaîne de caractères) et 'duree_conservation_ans' (nombre positif).");
+      }
+    
+      // 9. Validate 'classification' (must have all required properties)
+      if (!data.classification || 
+          !data.classification.serie || 
+          !data.classification.dossier || 
+          !data.classification.sous_dossier || 
+          !data.classification.entite_source) {
+        throw new BadRequestException("La classification doit inclure les champs 'serie', 'dossier', 'sous_dossier' et 'entite_source'.");
+      }
+    
+      // 10. Validate 'access_restriction' (must be one of the allowed values)
+      const allowedAccessRestrictions = ['public', 'restreint', 'confidentiel'];
+
+      // Normalize the input value (trim whitespace and convert to lowercase)
+      const normalizedAccessRestriction = data.access_restriction.trim().toLowerCase();
+
+      // Check if the normalized value is allowed
+      if (!allowedAccessRestrictions.includes(normalizedAccessRestriction)) {
+        throw new BadRequestException(
+          `La restriction d'accès doit être l'une des valeurs suivantes: ${allowedAccessRestrictions.join(', ')}.`
+        );
+      }
+    }
+    
+
+    private cleanupFiles(filePaths: string[]): void {
+      for (const path of filePaths) {
+        try {
+          if (fs.existsSync(path)) { // check if existe file 
+            fs.unlinkSync(path);    // remove path
+          }
+        } catch (error) {
+          console.error(`Error removing file ${path}:`, error);
+        }
+      }
+    }
+  
+    
+  
+    //end code of import
+    
 
       //delete l'archive
       async DeleteArch(id:string):Promise<{id:string, message:string}>{
@@ -60,7 +237,7 @@ export class ArchiveService {
         
       }
 
-      //end
+    //end
 
       //search by keywords
       async searchByKeywords(keywords: string): Promise<ArchiveEntit[]> {
@@ -73,7 +250,6 @@ export class ArchiveService {
 
 
       // start code of search advanced
-
       async advancedSearchWithParams(queryParams: any): Promise<ArchiveEntit[]> {
         const queryBuilder = this.archiveRepository.createQueryBuilder('archive');
         let hasCondition = false;
@@ -120,9 +296,7 @@ export class ArchiveService {
           hasCondition = true;
         }
         
-        // Handle nested fields with bracket notation: location[site], classification[serie], etc.
-        
-        // Handle location fields
+       
         for (const key in queryParams) {
           if (key.startsWith('location[') && key.endsWith(']')) {
             const field = key.substring(9, key.length - 1);
@@ -132,9 +306,10 @@ export class ArchiveService {
           }
         }
         
-        // Handle classification fields
 
-        //the role of this /\[|\]/g is to replace any [or ] with _
+
+ 
+        //handle classification
         for (const key in queryParams) {
           if (key.startsWith('classification[') && key.endsWith(']')) {
             const field = key.substring(15, key.length - 1);
@@ -166,5 +341,40 @@ export class ArchiveService {
         
         return queryBuilder.getMany();
       }
+
+
+      //retourne des statistique sur la conservation des archives 
+      async getConservationStats() {
+        const archivesData = await this.archiveRepository
+          .createQueryBuilder('archive')
+          .select('archive.metadata')
+          .getMany();
+    
+        const stats = {
+          archives_par_duree: {
+            '5_ans': 0,
+            '10_ans': 0,
+            'permanent': 0
+          }
+        };
+
+    
+        archivesData.forEach(archive => {
+          const duree = archive.metadata.duree_conservation_ans;
+          
+          if (duree >= 1 && duree <= 5) {
+            stats.archives_par_duree['5_ans']++;
+          } else if (duree > 5 && duree <= 10) {
+            stats.archives_par_duree['10_ans']++;
+          } else if (duree === -1 || duree > 10) {
+            // Assuming -1 or any value > 10 indicates permanent conservation
+            stats.archives_par_duree['permanent']++;
+          }
+        });
+    
+        return stats;
+      }
+
+
 
   }

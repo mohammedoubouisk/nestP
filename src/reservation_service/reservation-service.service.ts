@@ -51,23 +51,23 @@ export class ReservationService {
 
   // alors this nnot obligation  because werClause do everything
 
-  // async findByEmployee(employeeName: string): Promise<ReservationEntity[]> {
-  //   return this.reservationRepository.find({
-  //     where: { employe: employeeName },
-  //     relations: ['archive'],
-  //     order: {
-  //       date_debut: 'DESC',
-  //     },
-  //   });
-  // }
+  async findByEmployee(employeeName: string): Promise<ReservationEntity[]> {
+    return this.reservationRepository.find({
+      where: { employe: employeeName },
+      relations: ['archive'],
+      order: {
+        date_debut: 'DESC',
+      },
+    });
+  }
 
-  // async findByArchiveId(archiveId: string): Promise<ReservationEntity[]> {
-  //   return this.reservationRepository.find({
-  //     where: { archive_id: archiveId },
-  //     relations: ['archive'],
-  //     order: {
-  //       date_debut: 'DESC',
-  //     },
-  //   });
-  // }
+  async findByArchiveId(archiveId: string): Promise<ReservationEntity[]> {
+    return this.reservationRepository.find({
+      where: { archive_id: archiveId },
+      relations: ['archive'],
+      order: {
+        date_debut: 'DESC',
+      },
+    });
+  }
 }

@@ -20,6 +20,10 @@ import { FluxEmpruntModule } from './flux_emprunt/flux_emprunt.module';
 import { FluxEmpruntEntity } from './flux_emprunt/flux_emprunt.entity';
 import { ReservationModule} from './reservation_service/reservation-service.module'
 import { ReservationEntity } from './reservation_service/reservation-service.entity';
+import { FluxRetourModule } from './flux_emprunt-entre/flux_emprunt-entre.module';
+import { FluxRetourEntity } from './flux_emprunt-entre/flux_emprunt-entre.entity';
+
+import { StatsModule } from './statistique-utilisateur/statistique-utilisateur.module';
    
 
 @Module({
@@ -31,6 +35,8 @@ import { ReservationEntity } from './reservation_service/reservation-service.ent
   FluxSortantModule,
   FluxEmpruntModule,
   ReservationModule,
+  FluxRetourModule,
+  StatsModule,
   TypeOrmModule.forRootAsync({
     inject: [ConfigService],
     useFactory: (config: ConfigService) => {
@@ -42,7 +48,8 @@ import { ReservationEntity } from './reservation_service/reservation-service.ent
         port: config.get<number>('DB_PORT'),
         host: 'localhost',
         synchronize: process.env.NODE_ENV !== 'production',
-        entities: [ProductEntit, ReviewEntit, UserEntit, ArchiveEntit,FluxSortantEntity,FluxEmpruntEntity,ReservationEntity], 
+        entities: [ProductEntit, ReviewEntit, UserEntit, ArchiveEntit,FluxSortantEntity,FluxEmpruntEntity,ReservationEntity, FluxRetourEntity], 
+        
       };
     },
   }),
@@ -51,6 +58,8 @@ import { ReservationEntity } from './reservation_service/reservation-service.ent
     isGlobal:true,
     envFilePath:`.env.${process.env.NODE_ENV}`
  }),
+
+
 
  
 ],
