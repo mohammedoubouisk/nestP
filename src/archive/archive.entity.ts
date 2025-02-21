@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { UserEntit } from 'src/userdoc/userdoc.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 
 @Entity('archives')
 export class ArchiveEntit {
@@ -57,4 +58,6 @@ export class ArchiveEntit {
 
   @UpdateDateColumn()
   updated_at: Date;
+
+
 }

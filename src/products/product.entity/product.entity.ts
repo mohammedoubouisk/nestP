@@ -1,1 +1,1 @@
-export class ProductEntity {}
+// export class ProductEntity {}

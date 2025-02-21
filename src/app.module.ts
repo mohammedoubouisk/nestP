@@ -1,15 +1,15 @@
 
 import { Module } from '@nestjs/common';
-import { ProductsController } from './products/products.controller';
-import { ProductsModule } from './products/products.module';
-import { UsersModule } from './users/users.module';
-import { ReviewsModule } from './reviews/reviews.module';
-import { ProductsService } from './products/products.service';
+// import { ProductsController } from './products/products.controller';
+// import { ProductsModule } from './products/products.module';
+// import { UsersModule } from './users/users.module';
+// import { ReviewsModule } from './reviews/reviews.module';
+// import { ProductsService } from './products/products.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ProductEntit } from './products/products.entity';
+// import { ProductEntit } from './products/products.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ReviewEntit } from './reviews/reviews.entity';
-import { UserEntit } from './users/users.entity';
+// import { ReviewEntit } from './reviews/reviews.entity';
+// import { UserEntitis } from './users/users.entity';
 import { ArchiveModule } from './archive/archive.module';
 import { ArchiveEntit } from './archive/archive.entity';
 
@@ -23,20 +23,32 @@ import { ReservationEntity } from './reservation_service/reservation-service.ent
 import { FluxRetourModule } from './flux_emprunt-entre/flux_emprunt-entre.module';
 import { FluxRetourEntity } from './flux_emprunt-entre/flux_emprunt-entre.entity';
 
+import { UserEntit } from './userdoc/userdoc.entity';
+
 import { StatsModule } from './statistique-utilisateur/statistique-utilisateur.module';
+import { UserdocModule } from './userdoc/userdoc.module';
+
+import { AuditModule } from './logs/logs.module';
+import { ArchiveController } from './archive/archive.controller';
+import { ArchiveService } from './archive/archive.service';
+import { AuditLog } from './logs/logs.entity';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './AuthGuards/authguard.guard';
    
 
 @Module({
   imports: [
-  ProductsModule,
-  UsersModule,
-  ReviewsModule,
+  // ProductsModule,
+  // UsersModule,
+  // ReviewsModule,
   ArchiveModule,
   FluxSortantModule,
   FluxEmpruntModule,
   ReservationModule,
   FluxRetourModule,
   StatsModule,
+  UserdocModule,
+  AuditModule,
   TypeOrmModule.forRootAsync({
     inject: [ConfigService],
     useFactory: (config: ConfigService) => {
@@ -48,22 +60,23 @@ import { StatsModule } from './statistique-utilisateur/statistique-utilisateur.m
         port: config.get<number>('DB_PORT'),
         host: 'localhost',
         synchronize: process.env.NODE_ENV !== 'production',
-        entities: [ProductEntit, ReviewEntit, UserEntit, ArchiveEntit,FluxSortantEntity,FluxEmpruntEntity,ReservationEntity, FluxRetourEntity], 
+        entities: [ArchiveEntit,FluxSortantEntity,FluxEmpruntEntity,ReservationEntity, FluxRetourEntity,UserEntit,AuditLog], 
         
       };
     },
   }),
-  TypeOrmModule.forFeature([ProductEntit]),
   ConfigModule.forRoot({
     isGlobal:true,
     envFilePath:`.env.${process.env.NODE_ENV}`
  }),
-
-
-
  
 ],
-  controllers: [ProductsController],
-  providers:[ProductsService],
+  controllers: [],
+  providers:[
+  //    {
+  //   provide: APP_GUARD,
+  //   useClass: JwtAuthGuard,
+  // },
+]
 })
 export class AppModule {}   

@@ -1,3 +1,4 @@
+import { Roles } from 'src/decorator/roles.decorator';
 import {
   Controller,
   Post,
@@ -11,6 +12,7 @@ import {
   UploadedFile,
   UseInterceptors,
   UploadedFiles,
+  UseGuards,
 } from '@nestjs/common';
 import { ArchiveService } from './archive.service';
 import { diskStorage } from 'multer';
@@ -22,6 +24,10 @@ import {
   FilesInterceptor,
 } from '@nestjs/platform-express';
 import { CreateArchiveDto } from './dto/create_archive.dto';
+import { AuditMiddleware } from 'src/logs/middlware/logs.middleware';
+import { JwtAuthGuard } from 'src/AuthGuards/authguard.guard';
+import { RolesGuard } from 'src/AuthGuards/RolesGuards.guard';
+import { UserType } from 'src/utils/enum';
 
 
 @Controller('archive')
@@ -243,11 +249,15 @@ export class ArchiveController {
   }
 
   @Delete(':id')
+  @UseInterceptors(AuditMiddleware)
   async delete(@Param('id') id: string) {
     return await this.archiveService.DeleteArch(id);
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard,RolesGuard)
+  @Roles(UserType.ADMIN,UserType.NORMAL_USER)
+  @UseInterceptors(AuditMiddleware)
   async GetCurrentID(@Param('id') id: string) {
     return await this.archiveService.GetCurrentId(id);
   }
