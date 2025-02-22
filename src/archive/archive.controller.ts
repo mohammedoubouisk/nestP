@@ -249,6 +249,8 @@ export class ArchiveController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard,RolesGuard)
+  @Roles(UserType.ADMIN,UserType.NORMAL_USER)
   @UseInterceptors(AuditMiddleware)
   async delete(@Param('id') id: string) {
     return await this.archiveService.DeleteArch(id);
