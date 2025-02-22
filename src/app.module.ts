@@ -1,15 +1,9 @@
 
 import { Module } from '@nestjs/common';
-// import { ProductsController } from './products/products.controller';
-// import { ProductsModule } from './products/products.module';
-// import { UsersModule } from './users/users.module';
-// import { ReviewsModule } from './reviews/reviews.module';
-// import { ProductsService } from './products/products.service';
+
 import { TypeOrmModule } from '@nestjs/typeorm';
-// import { ProductEntit } from './products/products.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-// import { ReviewEntit } from './reviews/reviews.entity';
-// import { UserEntitis } from './users/users.entity';
+
 import { ArchiveModule } from './archive/archive.module';
 import { ArchiveEntit } from './archive/archive.entity';
 
@@ -38,9 +32,7 @@ import { JwtAuthGuard } from './AuthGuards/authguard.guard';
 
 @Module({
   imports: [
-  // ProductsModule,
-  // UsersModule,
-  // ReviewsModule,
+
   ArchiveModule,
   FluxSortantModule,
   FluxEmpruntModule,

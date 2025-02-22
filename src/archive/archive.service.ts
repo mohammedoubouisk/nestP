@@ -32,7 +32,6 @@ export class ArchiveService {
   
     // dans ici update Data ooo
     async updateArch(id: string, updateData: Partial<ArchiveEntit>): Promise<{ id: string; message: string }> {
-        // Vérifie si l'archive existe
         const archive = await this.archiveRepository.findOne({ where: { id } });
         if (!archive) {
           throw new NotFoundException(`Archive avec l'ID ${id} non trouvée.`);
@@ -50,7 +49,6 @@ export class ArchiveService {
 
           this.validateArchiveData(archiveData);
 
-          // Create archive entity
           const archive = this.archiveRepository.create({
             ...archiveData,
             created_at: new Date(),
@@ -58,7 +56,6 @@ export class ArchiveService {
           });
 
     
-          // Save to database
           const savedArchive = await this.archiveRepository.save(archive);
     
           return {
@@ -138,27 +135,22 @@ export class ArchiveService {
     }
     
     private validateArchiveData(data: CreateArchiveDto): void {
-      // 1. Validate 'title'
       if (!data.title || data.title.trim() === '') {
         throw new BadRequestException('Le titre est obligatoire et ne peut pas être vide.');
       }
     
-      // 2. Validate 'description' (optional but should not be empty if provided)
       if (data.description && data.description.trim() === '') {
         throw new BadRequestException("La description ne peut pas être vide si elle est fournie.");
       }
     
-      // 3. Validate 'keywords' (must be an array of strings)
       if (!Array.isArray(data.keywords) || data.keywords.some(keyword => typeof keyword !== 'string')) {
         throw new BadRequestException("Les mots-clés doivent être un tableau de chaînes de caractères.");
       }
     
-      // 4. Validate 'date_created' (must be a valid Date object)
       if (data.date_created && !(data.date_created instanceof Date)) {
         throw new BadRequestException("La date de création doit être une instance de Date valide.");
       }
     
-      // 5. Validate 'location' (must have all required properties)
       if (!data.location || 
           !data.location.site || 
           !data.location.locale || 
@@ -167,17 +159,14 @@ export class ArchiveService {
         throw new BadRequestException("L'emplacement doit inclure les champs 'site', 'locale', 'armoires' et 'etageres'.");
       }
     
-      // 6. Validate 'file_url' (if provided, must be a string)
       if (data.file_url && typeof data.file_url !== 'string') {
         throw new BadRequestException("L'URL du fichier doit être une chaîne de caractères valide.");
       }
     
-      // 7. Validate 'code_barre' (must be unique and non-empty)
       if (!data.code_barre || data.code_barre.trim() === '') {
         throw new BadRequestException("Le code-barres est obligatoire et ne peut pas être vide.");
       }
     
-      // 8. Validate 'metadata' (must have 'auteur' and 'duree_conservation_ans')
       if (!data.metadata || 
           !data.metadata.auteur || 
           typeof data.metadata.duree_conservation_ans !== 'number' || 
@@ -185,7 +174,6 @@ export class ArchiveService {
         throw new BadRequestException("Les métadonnées doivent inclure 'auteur' (chaîne de caractères) et 'duree_conservation_ans' (nombre positif).");
       }
     
-      // 9. Validate 'classification' (must have all required properties)
       if (!data.classification || 
           !data.classification.serie || 
           !data.classification.dossier || 
@@ -194,7 +182,6 @@ export class ArchiveService {
         throw new BadRequestException("La classification doit inclure les champs 'serie', 'dossier', 'sous_dossier' et 'entite_source'.");
       }
     
-      // 10. Validate 'access_restriction' (must be one of the allowed values)
       const allowedAccessRestrictions = ['public', 'restreint', 'confidentiel'];
 
       // Normalize the input value (trim whitespace and convert to lowercase)
