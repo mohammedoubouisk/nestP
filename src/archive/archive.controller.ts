@@ -55,7 +55,9 @@ export class ArchiveController {
 
   //code of create
   @Post('/add')
-  @UseInterceptors(
+  @UseGuards(JwtAuthGuard,RolesGuard)
+  @Roles(UserType.ADMIN,UserType.NORMAL_USER)
+  @UseInterceptors(AuditMiddleware,
     FileInterceptor('file', {
       storage: diskStorage({
         destination: './storages/archives',
@@ -241,6 +243,9 @@ export class ArchiveController {
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard,RolesGuard)
+  @Roles(UserType.ADMIN,UserType.NORMAL_USER)
+  @UseInterceptors(AuditMiddleware)
   async update(
     @Param('id') id: string,
     @Body() updateData: Partial<ArchiveEntit>,
@@ -250,7 +255,7 @@ export class ArchiveController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard,RolesGuard)
-  @Roles(UserType.ADMIN,UserType.NORMAL_USER)
+  @Roles(UserType.ADMIN)
   @UseInterceptors(AuditMiddleware)
   async delete(@Param('id') id: string) {
     return await this.archiveService.DeleteArch(id);
